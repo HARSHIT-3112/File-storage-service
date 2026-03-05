@@ -212,33 +212,6 @@ Quota is updated on every upload and delete. Exceeding quota returns `400 Storag
 
 ---
 
-## ⚙️ Environment Variables
-
-```env
-# Database
-DATABASE_URL=postgresql+asyncpg://storageuser:storagepass@localhost:5434/storagedb
-
-# Redis (Celery broker)
-REDIS_URL=redis://localhost:6380
-
-# MinIO
-MINIO_ENDPOINT=localhost:9000
-MINIO_ACCESS_KEY=minioadmin
-MINIO_SECRET_KEY=minioadmin123
-MINIO_BUCKET=file-storage
-MINIO_SECURE=False
-
-# JWT
-SECRET_KEY=your-super-secret-key-change-this-32-chars
-ALGORITHM=HS256
-ACCESS_TOKEN_EXPIRE_MINUTES=15
-
-# Limits
-MAX_FILE_SIZE_MB=50
-DEFAULT_QUOTA_GB=5
-```
-
----
 
 ## 🎨 Supported File Types
 
