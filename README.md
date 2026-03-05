@@ -263,4 +263,4 @@ celery -A celery_worker worker --loglevel=info
 
 ---
 
-*Built as part of a 60-day Backend + AI Mastery Roadmap — Day 3-4*
+
