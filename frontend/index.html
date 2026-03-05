@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vault — File Storage</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #07080d;
+    --surface: #0f1117;
+    --surface2: #161820;
+    --border: #1f2130;
+    --border2: #2a2d40;
+    --accent: #6c63ff;
+    --accent2: #a78bfa;
+    --cyan: #22d3ee;
+    --green: #34d399;
+    --red: #f87171;
+    --yellow: #fbbf24;
+    --text: #e8eaf0;
+    --muted: #5a5f7a;
+    --muted2: #8b90aa;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+
+  /* animated mesh bg */
+  .mesh {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    background:
+      radial-gradient(ellipse 80% 50% at 20% 50%, rgba(108,99,255,0.08) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 60% at 80% 20%, rgba(34,211,238,0.05) 0%, transparent 60%),
+      radial-gradient(ellipse 40% 40% at 60% 80%, rgba(167,139,250,0.06) 0%, transparent 60%);
+    animation: meshMove 12s ease-in-out infinite alternate;
+  }
+
+  @keyframes meshMove {
+    0% { transform: scale(1) rotate(0deg); }
+    100% { transform: scale(1.05) rotate(1deg); }
+  }
+
+  .grid-lines {
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(108,99,255,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(108,99,255,0.04) 1px, transparent 1px);
+    background-size: 60px 60px;
+    z-index: 0;
+  }
+
+  .wrapper {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 420px;
+    padding: 24px;
+    animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .logo {
+    text-align: center;
+    margin-bottom: 40px;
+  }
+
+  .logo-mark {
+    width: 56px;
+    height: 56px;
+    margin: 0 auto 16px;
+    position: relative;
+  }
+
+  .logo-mark svg {
+    width: 100%;
+    height: 100%;
+  }
+
+  .logo-text {
+    font-size: 28px;
+    font-weight: 800;
+    letter-spacing: -1px;
+    background: linear-gradient(135deg, #6c63ff, #22d3ee);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .logo-sub {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-top: 4px;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 36px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 20%; right: 20%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(108,99,255,0.6), transparent);
+  }
+
+  .tabs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 4px;
+    margin-bottom: 32px;
+  }
+
+  .tab {
+    padding: 9px;
+    text-align: center;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--muted);
+    border-radius: 7px;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.3px;
+  }
+
+  .tab.active {
+    background: var(--surface2);
+    color: var(--text);
+    border: 1px solid var(--border2);
+  }
+
+  .form { display: none; }
+  .form.active { display: block; }
+
+  .form-title {
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 4px;
+    letter-spacing: -0.5px;
+  }
+
+  .form-sub {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    margin-bottom: 28px;
+  }
+
+  .field { margin-bottom: 18px; }
+
+  .field label {
+    display: block;
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: var(--muted2);
+    margin-bottom: 7px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+  }
+
+  .input-wrap { position: relative; }
+
+  input {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 16px;
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    font-size: 14px;
+    outline: none;
+    transition: all 0.2s;
+  }
+
+  input:focus {
+    border-color: rgba(108,99,255,0.5);
+    box-shadow: 0 0 0 3px rgba(108,99,255,0.08);
+  }
+
+  input::placeholder { color: var(--muted); }
+
+  .btn {
+    width: 100%;
+    padding: 13px;
+    border-radius: 10px;
+    border: none;
+    font-family: 'Syne', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.3px;
+    margin-top: 4px;
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, #6c63ff, #a78bfa);
+    color: #fff;
+  }
+
+  .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(108,99,255,0.35);
+  }
+
+  .btn-primary:active { transform: translateY(0); }
+
+  .alert {
+    padding: 11px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    margin-bottom: 18px;
+    display: none;
+    font-family: 'DM Mono', monospace;
+  }
+
+  .alert.error { background: rgba(248,113,113,0.1); border: 1px solid rgba(248,113,113,0.25); color: #fca5a5; display: block; }
+  .alert.success { background: rgba(52,211,153,0.08); border: 1px solid rgba(52,211,153,0.2); color: var(--green); display: block; }
+</style>
+</head>
+<body>
+
+<div class="mesh"></div>
+<div class="grid-lines"></div>
+
+<div class="wrapper">
+  <div class="logo">
+    <div class="logo-mark">
+      <svg viewBox="0 0 56 56" fill="none">
+        <rect width="56" height="56" rx="14" fill="rgba(108,99,255,0.1)" stroke="rgba(108,99,255,0.3)" stroke-width="1"/>
+        <path d="M16 20h24M16 28h16M16 36h20" stroke="#6c63ff" stroke-width="2" stroke-linecap="round"/>
+        <circle cx="40" cy="36" r="6" fill="rgba(34,211,238,0.2)" stroke="#22d3ee" stroke-width="1.5"/>
+        <path d="M40 33v3l2 1" stroke="#22d3ee" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <div class="logo-text">VAULT</div>
+    <div class="logo-sub">secure file storage</div>
+  </div>
+
+  <div class="card">
+    <div class="tabs">
+      <div class="tab active" onclick="switchTab('login')">Sign In</div>
+      <div class="tab" onclick="switchTab('register')">Register</div>
+    </div>
+
+    <div class="alert" id="alert"></div>
+
+    <!-- LOGIN -->
+    <div class="form active" id="form-login">
+      <div class="form-title">Welcome back</div>
+      <div class="form-sub">// access your vault</div>
+
+      <div class="field">
+        <label>Email</label>
+        <input type="email" id="login-email" placeholder="you@example.com" />
+      </div>
+      <div class="field">
+        <label>Password</label>
+        <input type="password" id="login-password" placeholder="••••••••" />
+      </div>
+      <button class="btn btn-primary" id="login-btn" onclick="handleLogin()">Enter Vault →</button>
+    </div>
+
+    <!-- REGISTER -->
+    <div class="form" id="form-register">
+      <div class="form-title">Create account</div>
+      <div class="form-sub">// 5GB free storage</div>
+
+      <div class="field">
+        <label>Email</label>
+        <input type="email" id="reg-email" placeholder="you@example.com" />
+      </div>
+      <div class="field">
+        <label>Username</label>
+        <input type="text" id="reg-username" placeholder="yourname" />
+      </div>
+      <div class="field">
+        <label>Password</label>
+        <input type="password" id="reg-password" placeholder="Min 8 characters" />
+      </div>
+      <button class="btn btn-primary" id="reg-btn" onclick="handleRegister()">Create Vault →</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const API = '/api/v1/files';
+
+  function switchTab(tab) {
+    document.querySelectorAll('.tab').forEach((t, i) =>
+      t.classList.toggle('active', (i === 0 && tab === 'login') || (i === 1 && tab === 'register'))
+    );
+    document.getElementById('form-login').classList.toggle('active', tab === 'login');
+    document.getElementById('form-register').classList.toggle('active', tab === 'register');
+    clearAlert();
+  }
+
+  function showAlert(msg, type = 'error') {
+    const el = document.getElementById('alert');
+    el.className = `alert ${type}`;
+    el.textContent = msg;
+  }
+
+  function clearAlert() {
+    document.getElementById('alert').className = 'alert';
+  }
+
+  async function handleLogin() {
+    const email = document.getElementById('login-email').value.trim();
+    const password = document.getElementById('login-password').value;
+    if (!email || !password) return showAlert('Fill in all fields');
+
+    document.getElementById('login-btn').textContent = 'Signing in...';
+    try {
+      const res = await fetch(`${API}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+      const data = await res.json();
+      if (!res.ok) return showAlert(data.detail || 'Login failed');
+      localStorage.setItem('vault_token', data.access_token);
+      window.location.href = 'dashboard.html';
+    } catch(e) {
+      showAlert('Cannot connect to server. Is it running on port 8001?');
+    } finally {
+      document.getElementById('login-btn').textContent = 'Enter Vault →';
+    }
+  }
+
+  async function handleRegister() {
+    const email = document.getElementById('reg-email').value.trim();
+    const username = document.getElementById('reg-username').value.trim();
+    const password = document.getElementById('reg-password').value;
+    if (!email || !username || !password) return showAlert('Fill in all fields');
+
+    document.getElementById('reg-btn').textContent = 'Creating...';
+    try {
+      const res = await fetch(`${API}/auth/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, username, password })
+      });
+      const data = await res.json();
+      if (!res.ok) return showAlert(data.detail || 'Registration failed');
+      showAlert('Account created! Sign in now.', 'success');
+      setTimeout(() => switchTab('login'), 1500);
+    } catch(e) {
+      showAlert('Cannot connect to server.');
+    } finally {
+      document.getElementById('reg-btn').textContent = 'Create Vault →';
+    }
+  }
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Enter') {
+      if (document.getElementById('form-login').classList.contains('active')) handleLogin();
+      else handleRegister();
+    }
+  });
+
+  // redirect if already logged in
+  if (localStorage.getItem('vault_token')) window.location.href = 'dashboard.html';
+</script>
+</body>
+</html>

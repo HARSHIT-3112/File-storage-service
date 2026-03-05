@@ -1,0 +1,69 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: storage_postgres
+    environment:
+      POSTGRES_USER: storageuser
+      POSTGRES_PASSWORD: storagepass
+      POSTGRES_DB: storagedb
+    ports:
+      - "5434:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U storageuser -d storagedb"]
+      interval: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: storage_redis
+    ports:
+      - "6380:6379"
+
+  minio:
+    image: minio/minio
+    container_name: storage_minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin123
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: storage_backend
+    environment:
+      DATABASE_URL: postgresql+asyncpg://storageuser:storagepass@postgres:5432/storagedb
+      REDIS_URL: redis://redis:6379
+      MINIO_ENDPOINT: minio:9000
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin123
+      MINIO_BUCKET: file-storage
+      MINIO_SECURE: "false"
+      SECRET_KEY: your-super-secret-key-change-this-32-chars
+      MAX_FILE_SIZE_MB: "50"
+      DEFAULT_QUOTA_GB: "5"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: storage_frontend
+    ports:
+      - "3001:80"
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
+  minio_data:

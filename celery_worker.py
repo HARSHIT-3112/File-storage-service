@@ -1,0 +1,1 @@
+from app.workers.image_processor import celery_app
